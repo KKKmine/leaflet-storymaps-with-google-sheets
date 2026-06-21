@@ -84,15 +84,22 @@ $(window).on('load', function() {
    */
   function addBaseMap() {
     var basemap = trySetting('_tileProvider', 'Stamen.TonerLite');
-    L.tileLayer.provider(basemap, {
-      maxZoom: 18,
-      
-      // Pass the api key to most commonly used parameters
-      apiKey: trySetting('_tileProviderApiKey', ''),
-      apikey: trySetting('_tileProviderApiKey', ''),
-      key: trySetting('_tileProviderApiKey', ''),
-      accessToken: trySetting('_tileProviderApiKey', '')
-    }).addTo(map);
+    if (basemap == "Google.MapApi") {
+      L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 18,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+      }).addTo(map);
+    } else {
+      L.tileLayer.provider(basemap, {
+        maxZoom: 18,
+        
+        // Pass the api key to most commonly used parameters
+        apiKey: trySetting('_tileProviderApiKey', ''),
+        apikey: trySetting('_tileProviderApiKey', ''),
+        key: trySetting('_tileProviderApiKey', ''),
+        accessToken: trySetting('_tileProviderApiKey', '')
+      }).addTo(map);
+    }
   }
 
   function initMap(options, chapters) {
