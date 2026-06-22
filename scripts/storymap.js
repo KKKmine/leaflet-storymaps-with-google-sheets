@@ -191,6 +191,7 @@ $(window).on('load', function() {
 
       // Add media and credits: YouTube, audio, or image
       var media = null;
+      var mediaGroup = $();
       var mediaContainer = null;
 
       // Add media source
@@ -209,64 +210,85 @@ $(window).on('load', function() {
         });
       }
 
-      // YouTube
-      if (c['Media Link'] && c['Media Link'].indexOf('youtube.com/') > -1) {
-        media = $('<iframe></iframe>', {
-          src: c['Media Link'],
-          width: '100%',
-          height: '100%',
-          frameborder: '0',
-          allow: 'autoplay; encrypted-media',
-          allowfullscreen: 'allowfullscreen',
-        });
-
-        mediaContainer = $('<div></div>', {
-          class: 'img-container'
-        }).append(media).after(source);
-      }
-
-      // If not YouTube: either audio or image
-      var mediaTypes = {
-        'jpg': 'img',
-        'jpeg': 'img',
-        'png': 'img',
-        'tiff': 'img',
-        'gif': 'img',
-        'mp3': 'audio',
-        'ogg': 'audio',
-        'wav': 'audio',
-      }
-
-      var mediaExt = c['Media Link'] ? c['Media Link'].split('.').pop().toLowerCase() : '';
-      var mediaType = mediaTypes[mediaExt];
-
-      if (mediaType) {
-        media = $('<' + mediaType + '>', {
-          src: c['Media Link'],
-          controls: mediaType === 'audio' ? 'controls' : '',
-          alt: c['Chapter']
-        });
-
-        var enableLightbox = getSetting('_enableLightbox') === 'yes' ? true : false;
-        if (enableLightbox && mediaType === 'img') {
-          var lightboxWrapper = $('<a></a>', {
-            'data-lightbox': c['Media Link'],
-            'href': c['Media Link'],
-            'data-title': c['Chapter'],
-            'data-alt': c['Chapter'],
+      for (url of c['Media Link'].split('\n')) {
+        // YouTube
+        /*if (url && url.indexOf('youtube.com/') > -1) {
+          media = $('<iframe></iframe>', {
+            src: url,
+            width: '100%',
+            height: '100%',
+            frameborder: '0',
+            allow: 'autoplay; encrypted-media',
+            allowfullscreen: 'allowfullscreen',
           });
-          media = lightboxWrapper.append(media);
+
+          mediaContainer = $('<div></div>', {
+            class: 'img-container'
+          }).append(media).after(source);
+        }*/
+
+        // If not YouTube: either audio or image
+        var mediaTypes = {
+          'jpg': 'img',
+          'jpeg': 'img',
+          'png': 'img',
+          'tiff': 'img',
+          'gif': 'img',
+          'mp3': 'audio',
+          'ogg': 'audio',
+          'wav': 'audio',
         }
 
+        var mediaExt = url ? url.split('.').pop().toLowerCase() : '';
+        var mediaType = mediaTypes[mediaExt];
+
+        if (mediaType) {
+          var media = $('<' + mediaType + '>', {
+              controls: mediaType === 'audio' ? 'controls' : '',
+              alt: c['Chapter']
+            });
+          /* Only render the first media */
+          if (mediaGroup.length == 0) {
+            media.attr('src', url);
+          } else {
+            media.attr('data-src', url).css('display', 'none');
+          }
+
+          if (mediaType === 'img') {
+            var lightboxWrapper = $('<a></a>', {
+              'data-lightbox': "gallery-" + i,
+              'href': url,
+              'data-title': c['Chapter'],
+              'data-alt': c['Chapter'],
+            });
+            media = lightboxWrapper.append(media);
+            mediaGroup = mediaGroup.add(media);
+          }
+        }
+      }
+
+      if (mediaGroup.length) {
         mediaContainer = $('<div></div', {
           class: mediaType + '-container'
-        }).append(media).after(source);
+        }).append(mediaGroup.length > 1 ? $('<i class="material-icons">collections</i>') : '')
+          .append(mediaGroup)
+          .after(source)
+          .one("click", function() {
+            /* Load and cache img */
+            $(this).find('img').each(function() {
+              var realUrl = $(this).attr('data-src');
+              if (realUrl) {
+                $(this).attr('src', realUrl);
+                $(this).removeAttr('data-src');
+              }
+            });
+        });
       }
 
       container
         .append('<p class="chapter-header">' + c['Chapter'] + '</p>')
-        .append(media ? mediaContainer : '')
-        .append(media ? source : '')
+        .append(mediaGroup.length ? mediaContainer : '')
+        .append(mediaGroup.length ? source : '')
         .append('<p class="description">' + c['Description'] + '</p>');
 
       $('#contents').append(container);
