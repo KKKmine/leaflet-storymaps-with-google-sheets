@@ -160,7 +160,11 @@ $(window).on('load', function() {
         var lat = parseFloat(c['Latitude']);
         var lon = parseFloat(c['Longitude']);
 
-        chapterCount += 1;
+        if (c['Marker'] === 'Numbered') {
+          chapterCount += 1;
+        } else if (c['Marker'] !== '' && Number.isInteger(+c['Marker'])) {
+          chapterCount = +c['Marker'];
+        }
 
         markers.push(
           L.marker([lat, lon], {
@@ -210,11 +214,11 @@ $(window).on('load', function() {
         });
       }
 
-      for (url of c['Media Link'].split('\n')) {
+      for (link of c['Media Link'].split('\n')) {
         // YouTube
-        /*if (url && url.indexOf('youtube.com/') > -1) {
+        if (link.indexOf('youtube.com/') > -1 || link.indexOf('preview') > -1) {
           media = $('<iframe></iframe>', {
-            src: url,
+            src: link,
             width: '100%',
             height: '100%',
             frameborder: '0',
@@ -225,7 +229,8 @@ $(window).on('load', function() {
           mediaContainer = $('<div></div>', {
             class: 'img-container'
           }).append(media).after(source);
-        }*/
+          break;
+        }
 
         // If not YouTube: either audio or image
         var mediaTypes = {
@@ -239,8 +244,13 @@ $(window).on('load', function() {
           'wav': 'audio',
         }
 
+        var [url, title] = link.split(/ (.*)/s);
         var mediaExt = url ? url.split('.').pop().toLowerCase() : '';
         var mediaType = mediaTypes[mediaExt];
+
+        if (url.indexOf('drive.google.com/') > -1) {
+          mediaType = 'img';
+        }
 
         if (mediaType) {
           var media = $('<' + mediaType + '>', {
@@ -258,7 +268,7 @@ $(window).on('load', function() {
             var lightboxWrapper = $('<a></a>', {
               'data-lightbox': "gallery-" + i,
               'href': url,
-              'data-title': c['Chapter'],
+              'data-title': title ? title : c['Chapter'],
               'data-alt': c['Chapter'],
             });
             media = lightboxWrapper.append(media);
@@ -287,8 +297,8 @@ $(window).on('load', function() {
 
       container
         .append('<p class="chapter-header">' + c['Chapter'] + '</p>')
-        .append(mediaGroup.length ? mediaContainer : '')
-        .append(mediaGroup.length ? source : '')
+        .append(mediaContainer != null ? mediaContainer : '')
+        .append(mediaContainer != null ? source : '')
         .append('<p class="description">' + c['Description'] + '</p>');
 
       $('#contents').append(container);
@@ -483,7 +493,7 @@ $(window).on('load', function() {
       var containerId = parseInt( location.hash.substr(1) ) - 1;
       $('#contents').animate({
         scrollTop: $('#container' + containerId).offset().top
-      }, 2000);
+      }, 1000);
     }
 
     // Add Google Analytics if the ID exists
